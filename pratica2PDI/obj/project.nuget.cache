@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "4e63GJF/ItJNMvda1QryVkSd9npVFeW6ScUn4zp8wjCZr7hZYJnCgq4he6bfOvjCwEvI62ptRO2DhC6QVzsY/g==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Cliente\\source\\repos\\pratica2PDI\\pratica2PDI\\pratica2PDI.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Cliente\\.nuget\\packages\\microsoft.netcore.platforms\\1.1.0\\microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "C:\\Users\\Cliente\\.nuget\\packages\\microsoft.netcore.targets\\1.1.0\\microsoft.netcore.targets.1.1.0.nupkg.sha512",
+    "C:\\Users\\Cliente\\.nuget\\packages\\system.collections\\4.3.0\\system.collections.4.3.0.nupkg.sha512",
+    "C:\\Users\\Cliente\\.nuget\\packages\\system.runtime\\4.3.0\\system.runtime.4.3.0.nupkg.sha512"
+  ],
+  "logs": []
+}
