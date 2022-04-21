@@ -41,12 +41,9 @@ namespace pratica2PDI.Codigos.Core
 
             } while (hit);
 
-            int c = 0;
             foreach (int[,] Sk in S){
-                c++;
                 output = getChannelsSum(output, Sk, false);
             }
-            MessageBox.Show(c + " erosões");
             return output;
         }
 
@@ -73,7 +70,7 @@ namespace pratica2PDI.Codigos.Core
             channels.Add(B);
 
 
-            foreach(int[,] channel in channels)
+            foreach (int[,] channel in channels)
             {
                 List<int[,]> convergences = new List<int[,]>();
 
@@ -316,7 +313,6 @@ namespace pratica2PDI.Codigos.Core
                     output[h, w] = A[h, w] - B[h, w];
                 }
             }
-
             return output;
         }
     }
