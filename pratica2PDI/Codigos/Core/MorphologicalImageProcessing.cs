@@ -27,9 +27,9 @@ namespace pratica2PDI.Codigos.Core
 
             do
             {
-                int[,] tempErosion = erodeImage(erosion, new int[3, 3], out hit);
+                int[,] tempErosion = erodeChannel(erosion, new int[3, 3], out hit);
 
-                opening = dilateImage(tempErosion, new int[3, 3]);
+                opening = dilateChannel(tempErosion, new int[3, 3]);
                 int[,] Sk = imageDifference(ColorProcessing.invertChannelColors(erosion), ColorProcessing.invertChannelColors(opening));
                 Sk = ColorProcessing.invertChannelColors(Sk);
 
@@ -41,10 +41,12 @@ namespace pratica2PDI.Codigos.Core
 
             } while (hit);
 
+            int c = 0;
             foreach (int[,] Sk in S){
-                output = getImageSum(output, Sk, false);
+                c++;
+                output = getChannelsSum(output, Sk, false);
             }
-
+            MessageBox.Show(c + " erosões");
             return output;
         }
 
@@ -84,7 +86,7 @@ namespace pratica2PDI.Codigos.Core
 
                     do{
                         AtualHitOrMiss = hitOrMiss(HitOrMissSum, out altered, structuringElement);
-                        HitOrMissSum = getImageSum(HitOrMissSum, AtualHitOrMiss, false);
+                        HitOrMissSum = getChannelsSum(HitOrMissSum, AtualHitOrMiss, false);
                     } while (altered);
                     
                     convergences.Add(HitOrMissSum);
@@ -96,7 +98,7 @@ namespace pratica2PDI.Codigos.Core
 
                 foreach(int[,] convergence in convergences)
                 {
-                    channelOutput = getImageSum(channelOutput, convergence, false);
+                    channelOutput = getChannelsSum(channelOutput, convergence, false);
                 }
 
                 outputs.Add(channelOutput);
@@ -110,9 +112,9 @@ namespace pratica2PDI.Codigos.Core
         {
             int[,] output;
 
-            int[,] structuring = (B2?.GetLength(0) > 0) ? getImageSum(B1, ColorProcessing.invertChannelColors(B2), false) : B1;
+            int[,] structuring = (B2?.GetLength(0) > 0) ? getChannelsSum(B1, ColorProcessing.invertChannelColors(B2), false) : B1;
            
-            output = erodeImage(channel, structuring, out someHit);
+            output = erodeChannel(channel, structuring, out someHit);
 
             return output;
         }
@@ -121,20 +123,30 @@ namespace pratica2PDI.Codigos.Core
         {
             int[,] ROutput, GOutput, BOutput;
 
-            int[,] structuring = (B2?.GetLength(0) > 0) ? getImageSum(B1, ColorProcessing.invertChannelColors(B2), false) : B1;
+            int[,] structuring = (B2?.GetLength(0) > 0) ? getChannelsSum(B1, ColorProcessing.invertChannelColors(B2), false) : B1;
             
             bool Rh, Gh, Bh; //hit detect
 
-            ROutput = erodeImage(R, structuring, out Rh);
-            GOutput = erodeImage(G, structuring, out Gh);
-            BOutput = erodeImage(B, structuring, out Bh);
+            ROutput = erodeChannel(R, structuring, out Rh);
+            GOutput = erodeChannel(G, structuring, out Gh);
+            BOutput = erodeChannel(B, structuring, out Bh);
 
             someHit = (Rh || Gh || Bh);
 
             return (ROutput, GOutput, BOutput);
         }
 
-        public static int[,] erodeImage(int[,] originalChannelMatrix, int[,] structuringElement, out bool someHit, int foreIntensity = 0, int backIntesity = 255)
+        public static (int[,] R, int[,] G, int[,] B) erodeAllChannels(int[,] R, int[,] G, int[,] B, int[,] structuringElement, int foreIntensity = 0, int backIntesity = 255)
+        {
+            int[,]
+                ROutput = erodeChannel(R, structuringElement, out _, foreIntensity, backIntesity),
+                GOutput = erodeChannel(G, structuringElement, out _, foreIntensity, backIntesity),
+                BOutput = erodeChannel(B, structuringElement, out _, foreIntensity, backIntesity);
+
+            return (ROutput, GOutput, BOutput);
+        }
+
+        public static int[,] erodeChannel(int[,] originalChannelMatrix, int[,] structuringElement, out bool someHit, int foreIntensity = 0, int backIntesity = 255)
         {
             //armazenando o tamanho das estruturas para simplicidade nas chamadas
             int[] channelSize = { originalChannelMatrix.GetLength(0), originalChannelMatrix.GetLength(1) };
@@ -168,7 +180,17 @@ namespace pratica2PDI.Codigos.Core
             return output;
         }
 
-        public static int[,] dilateImage(int[,] originalChannelMatrix, int[,] structuringElement)
+        public static (int[,] R, int[,] G, int[,] B) dilateAllChannels(int[,] R, int[,] G, int[,] B, int[,] structuringElement, int foreIntensity = 0, int backIntesity = 255)
+        {
+            int[,]
+                ROutput = dilateChannel(R, structuringElement),
+                GOutput = dilateChannel(G, structuringElement),
+                BOutput = dilateChannel(B, structuringElement);
+
+            return (ROutput, GOutput, BOutput);
+        }
+
+        public static int[,] dilateChannel(int[,] originalChannelMatrix, int[,] structuringElement)
         {
             //armazenando o tamanho das estruturas para simplicidade nas chamadas
             int[] channelSize = { originalChannelMatrix.GetLength(0), originalChannelMatrix.GetLength(1) };
@@ -219,7 +241,7 @@ namespace pratica2PDI.Codigos.Core
             return output;
         }
 
-        public static int[,] getImageSum(int[,] A, int[,] B, bool useMax = true)
+        public static int[,] getChannelsSum(int[,] A, int[,] B, bool useMax = true)
         {
             int[,] output = new int[A.GetLength(0), A.GetLength(1)];
 
@@ -254,21 +276,33 @@ namespace pratica2PDI.Codigos.Core
 
         public static int[,] fillHoles(int[,] original, int iterations = -1)
         {
-            if (iterations < 0) iterations = Math.Max(original.GetLength(0), original.GetLength(1)) / 2;
+            //if (iterations < 0) iterations = Math.Max(original.GetLength(0), original.GetLength(1)) / 2;
 
             int[,] inverted = ColorProcessing.invertChannelColors(original);
             int[,] structure = new int[3, 3];
 
             int[,] dilation = ImageManagment.getImageBorders(inverted);
+            int[,] tempDilation;
 
-            for (int i = 0; i < iterations; i++)
+            int i = 0;
+
+            while (true)
             {
-                dilation = dilateImage(dilation, structure);
-                dilation = getIntersection(dilation, inverted);
+                if (iterations > 0 && i > iterations) break;
+                i++;
+
+                tempDilation = dilateChannel(dilation, structure);
+                tempDilation = getIntersection(tempDilation, inverted);
+
+                if (ImageManagment.compareChannels(tempDilation, dilation))
+                    break;
+
+                dilation = tempDilation;
+
             }
 
             int[,] output = ColorProcessing.invertChannelColors(dilation);
-            output = getImageSum(output, original, false);
+            output = getChannelsSum(output, original, false);
 
             return output;
         }

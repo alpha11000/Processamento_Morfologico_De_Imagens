@@ -59,11 +59,6 @@ namespace pratica2PDI.Codigos.UI
 
             int size = -1;
 
-            /*if (MessageBox.Show("Limitar iterações?", ":)", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            {
-                //////////////
-            }*/
-
             int[,] Rb = MorphologicalImageProcessing.fillHoles(Ri, size);
             int[,] Gb = MorphologicalImageProcessing.fillHoles(Gi, size);
             int[,] Bb = MorphologicalImageProcessing.fillHoles(Bi, size);
@@ -78,8 +73,8 @@ namespace pratica2PDI.Codigos.UI
 
         private void removerPontos(object sender, EventArgs e)
         {
-            int erosionRepetitions = 0;
-            _ = int.TryParse(erosoesSucessivas.Text, out erosionRepetitions);
+            int erosionRepetitions = 1;
+            if (!int.TryParse(erosoesSucessivas.Text, out erosionRepetitions)) erosionRepetitions = 1;
 
             int structSize;
             if(!int.TryParse(estruturanteTam.Text, out structSize)) structSize = 3;
@@ -93,15 +88,17 @@ namespace pratica2PDI.Codigos.UI
                 Gi = inputLimiarizedChannels.G,
                 Bi = inputLimiarizedChannels.B;
 
-            int[,] erodedR = Ri,
-                   erodedG = Gi,
-                   erodedB = Bi;
+            int[,] 
+                erodedR = Ri,
+                erodedG = Gi,
+                erodedB = Bi;
 
-            for (int i = 0; i < erosionRepetitions - 1; i++)
+            for (int i = 0; i < erosionRepetitions; i++)
             {
-                erodedR = MorphologicalImageProcessing.erodeImage(erodedR, structured, out _);
-                erodedG = MorphologicalImageProcessing.erodeImage(erodedG, structured, out _);
-                erodedB = MorphologicalImageProcessing.erodeImage(erodedB, structured, out _);
+                var eroded = MorphologicalImageProcessing.erodeAllChannels(erodedR, erodedG, erodedB, structured);
+                erodedR = eroded.R;
+                erodedG = eroded.G;
+                erodedB = eroded.B;
             }
 
             int[,]  ROutput = erodedR,
@@ -122,9 +119,9 @@ namespace pratica2PDI.Codigos.UI
             {
                 for(int i = 0; i < erosionRepetitions; i++)
                 {
-                    ROutput = MorphologicalImageProcessing.dilateImage(ROutput, structured);
-                    GOutput = MorphologicalImageProcessing.dilateImage(GOutput, structured);
-                    BOutput = MorphologicalImageProcessing.dilateImage(BOutput, structured);
+                    ROutput = MorphologicalImageProcessing.dilateChannel(ROutput, structured);
+                    GOutput = MorphologicalImageProcessing.dilateChannel(GOutput, structured);
+                    BOutput = MorphologicalImageProcessing.dilateChannel(BOutput, structured);
                 }
             }
 
@@ -135,6 +132,7 @@ namespace pratica2PDI.Codigos.UI
 
         }
 
+        //TESTE
         private void erodeTest_Click_Experimental(object sender, EventArgs e)
         {
             int structSize = int.Parse(estruturanteTam.Text.ToString());
@@ -147,30 +145,30 @@ namespace pratica2PDI.Codigos.UI
                 G = colorChannels.G,
                 B = colorChannels.B;
 
-            int[,] eR = MorphologicalImageProcessing.erodeImage(R, structred, out _);
-            int[,] eG = MorphologicalImageProcessing.erodeImage(G, structred, out _);
-            int[,] eB = MorphologicalImageProcessing.erodeImage(B, structred, out _);
+            int[,] eR = MorphologicalImageProcessing.erodeChannel(R, structred, out _);
+            int[,] eG = MorphologicalImageProcessing.erodeChannel(G, structred, out _);
+            int[,] eB = MorphologicalImageProcessing.erodeChannel(B, structred, out _);
 
             Bitmap erode = ColorProcessing.mixColorChannels(eR, eG, eB);
             new exibirImagem(erode, "erode 1").Show();
 
-            int[,] dR = MorphologicalImageProcessing.dilateImage(eR, structred);
-            int[,] dG = MorphologicalImageProcessing.dilateImage(eG, structred);
-            int[,] dB = MorphologicalImageProcessing.dilateImage(eB, structred);
+            int[,] dR = MorphologicalImageProcessing.dilateChannel(eR, structred);
+            int[,] dG = MorphologicalImageProcessing.dilateChannel(eG, structred);
+            int[,] dB = MorphologicalImageProcessing.dilateChannel(eB, structred);
 
             Bitmap dilate = ColorProcessing.mixColorChannels(dR, dG, dB);
             new exibirImagem(dilate, "dilate 1").Show();
 
-            int[,] d2R = MorphologicalImageProcessing.dilateImage(dR, structred);
-            int[,] d2G = MorphologicalImageProcessing.dilateImage(dG, structred);
-            int[,] d2B = MorphologicalImageProcessing.dilateImage(dB, structred);
+            int[,] d2R = MorphologicalImageProcessing.dilateChannel(dR, structred);
+            int[,] d2G = MorphologicalImageProcessing.dilateChannel(dG, structred);
+            int[,] d2B = MorphologicalImageProcessing.dilateChannel(dB, structred);
 
             Bitmap dilate2 = ColorProcessing.mixColorChannels(d2R, d2G, d2B);
             new exibirImagem(dilate2, "dilate 2").Show();
 
-            int[,] e2R = MorphologicalImageProcessing.erodeImage(d2R, structred, out _);
-            int[,] e2G = MorphologicalImageProcessing.erodeImage(d2G, structred, out _);
-            int[,] e2B = MorphologicalImageProcessing.erodeImage(d2B, structred, out _);
+            int[,] e2R = MorphologicalImageProcessing.erodeChannel(d2R, structred, out _);
+            int[,] e2G = MorphologicalImageProcessing.erodeChannel(d2G, structred, out _);
+            int[,] e2B = MorphologicalImageProcessing.erodeChannel(d2B, structred, out _);
 
            // noDots = ColorProcessing.mixColorChannels(e2R, e2G, e2B);
            // new exibirImagem(noDots, "erode 2").Show();
@@ -262,6 +260,8 @@ namespace pratica2PDI.Codigos.UI
                 skR = joinedChannel.R,
                 skG = joinedChannel.G,
                 skB = joinedChannel.B;
+
+            MessageBox.Show(ImageManagment.countPixelsWithIntensity(skR, 0) + " pixels no esqueleto");
 
             Bitmap skeletonImage = ColorProcessing.mixColorChannels(skR, skG, skB);
             new exibirImagem(skeletonImage, "Skeleton").Show();

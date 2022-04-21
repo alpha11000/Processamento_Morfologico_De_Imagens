@@ -2,6 +2,8 @@
 {
     internal class Filters
     {
+        //public static 
+
         public static int[,] aplyMedianFilter(int[,] original, int filterSize)
         {
             int[,] aumentada = ImageManagment.getAumentedChannel(original, new int[] { filterSize, filterSize }, -1);
