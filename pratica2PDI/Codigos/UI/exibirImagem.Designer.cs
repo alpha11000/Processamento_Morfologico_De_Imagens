@@ -40,10 +40,10 @@
             this.ExportarButton.FlatAppearance.BorderColor = System.Drawing.Color.White;
             this.ExportarButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.ExportarButton.ForeColor = System.Drawing.Color.White;
-            this.ExportarButton.Location = new System.Drawing.Point(0, 357);
+            this.ExportarButton.Location = new System.Drawing.Point(0, 205);
             this.ExportarButton.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.ExportarButton.Name = "ExportarButton";
-            this.ExportarButton.Size = new System.Drawing.Size(415, 25);
+            this.ExportarButton.Size = new System.Drawing.Size(235, 25);
             this.ExportarButton.TabIndex = 1;
             this.ExportarButton.Text = "Exportar";
             this.ExportarButton.UseVisualStyleBackColor = true;
@@ -51,12 +51,12 @@
             // 
             // imagem
             // 
-            this.imagem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(255)))));
+            this.imagem.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(34)))), ((int)(((byte)(34)))), ((int)(((byte)(34)))));
             this.imagem.Dock = System.Windows.Forms.DockStyle.Fill;
             this.imagem.Location = new System.Drawing.Point(0, 0);
             this.imagem.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.imagem.Name = "imagem";
-            this.imagem.Size = new System.Drawing.Size(415, 382);
+            this.imagem.Size = new System.Drawing.Size(235, 230);
             this.imagem.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.imagem.TabIndex = 0;
             this.imagem.TabStop = false;
@@ -66,7 +66,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(30)))), ((int)(((byte)(30)))));
-            this.ClientSize = new System.Drawing.Size(415, 382);
+            this.ClientSize = new System.Drawing.Size(235, 230);
             this.Controls.Add(this.ExportarButton);
             this.Controls.Add(this.imagem);
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);

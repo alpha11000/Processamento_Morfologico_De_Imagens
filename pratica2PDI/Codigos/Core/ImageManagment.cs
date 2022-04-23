@@ -6,7 +6,7 @@ namespace pratica2PDI.Codigos.Core
     {
         private Dictionary<string, List<int[,]>> outputs = new Dictionary<string, List<int[,]>>();
 
-        public static bool compareChannels(int[,] A, int[,] B)
+        public static bool compareChannels(int[,] A, int[,] B)//return true or false - equal or not
         {
             for(int h = 0; h < A.GetLength(0); h++)
             {
@@ -20,77 +20,147 @@ namespace pratica2PDI.Codigos.Core
             return true;
         }
 
-        public static (int[,] R, int[,] G, int[,] B) joinChannelDialog(int[,] R, int[,] G, int[,] B, int separatedColor, int[,] intersection)
+        public static (int[,] R, int[,] G, int[,] B) separateChannelDialog(int[,] R, int[,] G, int[,] B, out int separatedColor, out int[,] ABIntersection, out int[,] CFactor)
+        {
+            string[] options = { "Nenhuma", "Vermelho", "Verde", "Azul" };
+            ChooseOption cO = new ChooseOption("Ignorar cor:", options);
+            cO.ShowDialog();
+            separatedColor = cO.getChoice();
+
+            if (separatedColor == 0)
+            {
+                ABIntersection = null;
+                CFactor = null;
+                return (R, G, B);
+            }
+
+            int APos = mod((separatedColor - 2), 3),
+                BPos = mod(separatedColor, 3),
+                CPos = mod(separatedColor - 1, 3);
+
+            List<int[,]> channels = new List<int[,]>() { R, G, B };
+
+            int[,] channelA = channels.ElementAt(APos),
+                   channelB = channels.ElementAt(BPos),
+                   channelC = channels.ElementAt(CPos);
+
+            int[,] invA = ColorProcessing.invertChannelColors(channelA);
+            int[,] invB = ColorProcessing.invertChannelColors(channelB);
+            int[,] invC = ColorProcessing.invertChannelColors(channelC); //Cc
+
+            ABIntersection = MorphologicalImageProcessing.getIntersection(channelA, channelB); //I
+
+            int[,] tmpintersection = MorphologicalImageProcessing.getChannelsSum(ABIntersection, invC, true);
+            tmpintersection = ColorProcessing.invertChannelColors(tmpintersection); //Mc
+            tmpintersection = MorphologicalImageProcessing.imageDifference(tmpintersection, invC);
+
+            int[,] outA = MorphologicalImageProcessing.getIntersection(invB, channelA);
+            int[,] outB = MorphologicalImageProcessing.getIntersection(invA, channelB);
+            int[,] CIntersection = MorphologicalImageProcessing.getChannelsSum(outA, outB, false);
+
+            int[,] tmpIntersection = MorphologicalImageProcessing.imageDifference(ABIntersection, invC);
+            tmpIntersection = ColorProcessing.invertChannelColors(tmpIntersection);
+
+            int[,] test = MorphologicalImageProcessing.getIntersection(CIntersection, tmpIntersection);
+            CFactor = test;
+
+            int[,] outC = channelC;
+
+
+            int[,]  ROutput = (CPos == 0) ? outC : (BPos == 0) ? outB : outA,
+                    GOutput = (CPos == 1) ? outC : (BPos == 1) ? outB : outA,
+                    BOutput = (CPos == 2) ? outC : (BPos == 2) ? outB : outA;
+
+
+            return (ROutput, GOutput, BOutput);
+
+        }
+
+        public static (int[,] R, int[,] G, int[,] B) joinChannelDialog(int[,] R, int[,] G, int[,] B, int separatedColor, int[,] ABintersection, int[,] CFactor, (int[,] R, int[,] G, int[,] B) separated, (int[,] R, int[,] G, int[,] B) original, bool skeleton = false, int overridingC = 0)
         {
             if (separatedColor == 0) return (R, G, B);
 
             int[,] empty = ColorProcessing.getFilledMatrix(R.GetLength(0), R.GetLength(1), 0);
 
-            //atualizar no relatório
             List<int[,]> channels = new List<int[,]>() { R, G, B };
-            int[,] channelA = channels.ElementAt(mod((separatedColor - 2), 3));
-            int[,] channelB = channels.ElementAt(mod(separatedColor, 3));
+            List<int[,]> separatedList = new List<int[,]> { separated.R, separated.G, separated.B };
+            List<int[,]> originalList = new List<int[,]> { original.R, original.G, original.B };
 
-            int[,] channelsSum = MorphologicalImageProcessing.getChannelsSum(channelA, channelB, false);
-            int[,] newIntersection = MorphologicalImageProcessing.getIntersection(intersection, channelsSum); //I2
-            int[,] invNewIntesection = ColorProcessing.invertChannelColors(newIntersection);
-            int[,] sum = MorphologicalImageProcessing.getChannelsSum(intersection, invNewIntesection, true);
+            int APos = mod((separatedColor - 2), 3),
+                BPos = mod(separatedColor, 3),
+                CPos = mod(separatedColor - 1, 3);
 
-            int[,]
-                ROutput = (separatedColor == 1) ? MorphologicalImageProcessing.getChannelsSum(R, invNewIntesection, true) :
-                                                  MorphologicalImageProcessing.getChannelsSum(R, sum, false),
+            int[,] channelA = channels.ElementAt(APos);
+            int[,] channelB = channels.ElementAt(BPos);
+            int[,] channelC = channels.ElementAt(CPos);
 
-                GOutput = (separatedColor == 2) ? MorphologicalImageProcessing.getChannelsSum(G, invNewIntesection, true) :
-                                                  MorphologicalImageProcessing.getChannelsSum(G, sum, false),
+            int[,] intersectionAC = MorphologicalImageProcessing.getIntersection(channelA, channelC);
+            intersectionAC = ColorProcessing.invertChannelColors(intersectionAC);
+            
+            int[,] intersectionBC = MorphologicalImageProcessing.getIntersection(channelB, channelC);
+            intersectionBC = ColorProcessing.invertChannelColors(intersectionBC);
+            
+            int[,] invABIntersection = ColorProcessing.invertChannelColors(ABintersection);
 
-                BOutput = (separatedColor == 3) ? MorphologicalImageProcessing.getChannelsSum(B, invNewIntesection, true) :
-                                                  MorphologicalImageProcessing.getChannelsSum(B, sum, false);
+            int[,] outA = MorphologicalImageProcessing.getChannelsSum(channelA, ABintersection, false),
+                   outB = MorphologicalImageProcessing.getChannelsSum(channelB, ABintersection, false),
+                   outC = MorphologicalImageProcessing.getChannelsSum(invABIntersection, channelC, true);
 
-            new exibirImagem(ColorProcessing.mixColorChannels(empty, GOutput, empty)).Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(ROutput, empty, empty)).Show();
+            outA = MorphologicalImageProcessing.getChannelsSum(outA, intersectionBC, true); //Max
+            outB = MorphologicalImageProcessing.getChannelsSum(outB, intersectionAC, true); //Max
+
+            if (skeleton)
+            {
+                int overlayChannel = channelOverlayDialog(separatedColor);
+
+                if(overlayChannel != 0)
+                {
+                    int[,] separatedCh = (overlayChannel == 2) ? separatedList.ElementAt(APos) : separatedList.ElementAt(BPos);
+                    int[,] ch = (overlayChannel == 2) ? channelA : channelB;
+                    ch = ColorProcessing.invertChannelColors(ch);
+
+                    int[,] cFactorIntersection = MorphologicalImageProcessing.getIntersection(CFactor, separatedCh);
+                    cFactorIntersection = MorphologicalImageProcessing.getChannelsSum(cFactorIntersection, ch, true);
+
+                    outA = MorphologicalImageProcessing.getChannelsSum(outA, cFactorIntersection, false);
+                    outB = MorphologicalImageProcessing.getChannelsSum(outB, cFactorIntersection, false);
+                }
+            }
+
+
+            int[,] ROutput = (CPos == 0) ? outC : (BPos == 0) ? outB : outA,
+                   GOutput = (CPos == 1) ? outC : (BPos == 1) ? outB : outA,
+                   BOutput = (CPos == 2) ? outC : (BPos == 2) ? outB : outA;
 
             return (ROutput, GOutput, BOutput);
         }
 
-        public static (int[,] R, int[,] G, int[,] B) separateChannelDialog(int[,] R, int[,] G, int[,] B, out int isolatedColor, out int[,] intersection)
+
+        public static int channelOverlayDialog(int separatedColor)
         {
-            string[] options = { "Nenhuma", "Vermelho", "Verde", "Azul" };
-            ChooseOption cO = new ChooseOption("Ignorar cor:", options);
-            cO.ShowDialog();
-            isolatedColor = cO.getChoice();
-
-            List<int[,]> channels = new List<int[,]>() { R, G, B };
-
-            if (isolatedColor == 0)
+            if (separatedColor < 1 || separatedColor > 3)
             {
-                intersection = null;
-                return (R, G, B);
+                return 0;
             }
 
-            int[,] invColor = ColorProcessing.invertChannelColors(channels.ElementAt(isolatedColor - 1)); //Cc
-            int[,] channelA = channels.ElementAt(mod((isolatedColor - 2), 3));
-            int[,] channelB = channels.ElementAt(mod(isolatedColor, 3));
+            if (MessageBox.Show("Na imagem de entrada existe alguma sobreposição com objetos da cor escolhida?", "", MessageBoxButtons.YesNo) == DialogResult.No)
+            {
+                return 0;
+            }
 
-            intersection = MorphologicalImageProcessing.getIntersection(channelA, channelB); //I
-
-            new exibirImagem(ColorProcessing.mixColorChannels(intersection, intersection, intersection), "Intersection").Show();
-
-            int[,] tmpintersection = MorphologicalImageProcessing.getChannelsSum(intersection, invColor, true);
-            int[,] invIntersect = ColorProcessing.invertChannelColors(tmpintersection); //Mc
-
-            new exibirImagem(ColorProcessing.mixColorChannels(tmpintersection, tmpintersection, tmpintersection), "intersection + Cc").Show();
-
-            int[,]
-                ROutput = (isolatedColor == 1) ? R : MorphologicalImageProcessing.getChannelsSum(invIntersect, R, true),
-                GOutput = (isolatedColor == 2) ? G : MorphologicalImageProcessing.getChannelsSum(invIntersect, G, true),
-                BOutput = (isolatedColor == 3) ? B : MorphologicalImageProcessing.getChannelsSum(invIntersect, B, true);
-
-            //new exibirImagem(ColorProcessing.mixColorChannels(GOutput, GOutput, GOutput), "G separed").Show();
-            //new exibirImagem(ColorProcessing.mixColorChannels(BOutput, BOutput, BOutput), "B separed").Show();
+            int APos = mod((separatedColor - 2), 3),
+                BPos = mod(separatedColor, 3),
+                CPos = mod(separatedColor - 1, 3);
 
 
-            return (ROutput, GOutput, BOutput);
+            string[] originalOptions = { "Vermelho", "Verde", "Azul" };
+            string[] options = { originalOptions[APos], originalOptions[BPos] };
 
+            ChooseOption cO = new ChooseOption("cor do objeto sobrepondo:", options);
+            cO.ShowDialog();
+            int choice = cO.getChoice();
+
+            return choice + 1;
         }
 
         public void deleteOutputs()
@@ -202,25 +272,6 @@ namespace pratica2PDI.Codigos.Core
                     }
                 }
             }
-
-            return output;
-        }
-
-        public static int[,] getVerticalLinesInChannel(int[,] channel, int minHeight)
-        {
-            int[,] verticalLineDetect = new int[minHeight, 3];
-
-            int[,] output = ColorProcessing.getFilledMatrix(channel.GetLength(0), channel.GetLength(1), 255);
-
-            for (int h = 0; h < minHeight; h++)
-            {
-                verticalLineDetect[h, 0] = 255;
-                verticalLineDetect[h, 1] = 0;
-                verticalLineDetect[h, 2] = -1;
-            }
-
-            int[,] hitOrMissChannel = MorphologicalImageProcessing.hitOrMiss(channel, out _, verticalLineDetect);
-            output = MorphologicalImageProcessing.getChannelsSum(output, hitOrMissChannel, false);
 
             return output;
         }

@@ -116,6 +116,25 @@ namespace pratica2PDI.Codigos.Core
             return output;
         }
 
+        public static int[,] getVerticalLinesInChannel(int[,] channel, int minHeight)
+        {
+            int[,] verticalLineDetect = new int[minHeight, 3];
+
+            int[,] output = ColorProcessing.getFilledMatrix(channel.GetLength(0), channel.GetLength(1), 255);
+
+            for (int h = 0; h < minHeight; h++)
+            {
+                verticalLineDetect[h, 0] = 255;
+                verticalLineDetect[h, 1] = 0;
+                verticalLineDetect[h, 2] = -1;
+            }
+
+            int[,] hitOrMissChannel = hitOrMiss(channel, out _, verticalLineDetect);
+            output = getChannelsSum(output, hitOrMissChannel, false);
+
+            return output;
+        }
+
         public static (int[,] R, int[,] G, int[,] B) hitOrMissAll(int[,] R, int[,] G, int[,] B, out bool someHit, int[,] B1, int[,] B2 = null)
         {
             int[,] ROutput, GOutput, BOutput;
@@ -273,8 +292,6 @@ namespace pratica2PDI.Codigos.Core
 
         public static int[,] fillHoles(int[,] original, int iterations = -1)
         {
-            //if (iterations < 0) iterations = Math.Max(original.GetLength(0), original.GetLength(1)) / 2;
-
             int[,] inverted = ColorProcessing.invertChannelColors(original);
             int[,] structure = new int[3, 3];
 
@@ -311,6 +328,7 @@ namespace pratica2PDI.Codigos.Core
             for(int h = 0; h < output.GetLength(0); h++){
                 for (int w = 0; w < output.GetLength(1); w++){
                     output[h, w] = A[h, w] - B[h, w];
+                    if (output[h, w] < 0) output[h, w] = 0;
                 }
             }
             return output;

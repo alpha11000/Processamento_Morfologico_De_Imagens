@@ -48,10 +48,8 @@ namespace pratica2PDI.Codigos.UI
             }
         }
 
-        private void Teste_Click(object sender, EventArgs e)
+        private void preencherBuracosButton_click(object sender, EventArgs e)
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-
             var inputResult = iM.getInputImageDialog(true);
 
             int[,] Ri = inputResult.R,
@@ -64,21 +62,20 @@ namespace pratica2PDI.Codigos.UI
             int[,] Gb = MorphologicalImageProcessing.fillHoles(Gi, size);
             int[,] Bb = MorphologicalImageProcessing.fillHoles(Bi, size);
 
+            iM.saveOutput(Rb, Gb, Bb, "Buracos preenchidos");
+
             Bitmap output = ColorProcessing.mixColorChannels(Rb, Gb, Bb);
 
             new exibirImagem(output).Show();
-            watch.Stop();
-            MessageBox.Show($"in {watch.ElapsedMilliseconds / 1000} seconds");
-        
         }
 
         private void removerPontos(object sender, EventArgs e)
         {
             int structSizeH;
-            if(!int.TryParse(estruturanteTam.Text, out structSizeH)) structSizeH = 3;
+            if(!int.TryParse(estruturanteTamM.Text, out structSizeH)) structSizeH = 3;
 
             int structSizeW;
-            if (!int.TryParse(erosoesSucessivas.Text, out structSizeW)) structSizeW = 3;
+            if (!int.TryParse(estruturanteTamN.Text, out structSizeW)) structSizeW = 3;
 
             int[,] structured = new int[structSizeH, structSizeW];
 
@@ -114,73 +111,38 @@ namespace pratica2PDI.Codigos.UI
             new exibirImagem(output).Show();
         }
 
-        //TESTE
-        private void erodeTest_Click_Experimental(object sender, EventArgs e)
+        private void contarQuadradosVermelhos_Click(object sender, EventArgs e)
         {
-            int structSize = int.Parse(estruturanteTam.Text.ToString());
-            int[,] structred = new int[structSize, structSize];
-
-            var colorChannels = ColorProcessing.getAllColorChannels(bitmapImage);
+            var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
 
             int[,]
-                R = colorChannels.R,
-                G = colorChannels.G,
-                B = colorChannels.B;
+                Ri = inputLimiarizedChannels.R,
+                Gi = inputLimiarizedChannels.G,
+                Bi = inputLimiarizedChannels.B;
 
-            int[,] eR = MorphologicalImageProcessing.erodeChannel(R, structred, out _);
-            int[,] eG = MorphologicalImageProcessing.erodeChannel(G, structred, out _);
-            int[,] eB = MorphologicalImageProcessing.erodeChannel(B, structred, out _);
+            int[,] GBIntersection = MorphologicalImageProcessing.getIntersection(Bi, Gi);
+            int[,] verticalLines = MorphologicalImageProcessing.getVerticalLinesInChannel(GBIntersection, 15);
+            int[,] colapsedVerticalLines = ImageManagment.collapseVerticalLines(verticalLines);
 
-            Bitmap erode = ColorProcessing.mixColorChannels(eR, eG, eB);
-            new exibirImagem(erode, "erode 1").Show();
+            int objectsCount = ImageManagment.countPixelsWithIntensity(colapsedVerticalLines, 0);
 
-            int[,] dR = MorphologicalImageProcessing.dilateChannel(eR, structred);
-            int[,] dG = MorphologicalImageProcessing.dilateChannel(eG, structred);
-            int[,] dB = MorphologicalImageProcessing.dilateChannel(eB, structred);
 
-            Bitmap dilate = ColorProcessing.mixColorChannels(dR, dG, dB);
-            new exibirImagem(dilate, "dilate 1").Show();
 
-            int[,] d2R = MorphologicalImageProcessing.dilateChannel(dR, structred);
-            int[,] d2G = MorphologicalImageProcessing.dilateChannel(dG, structred);
-            int[,] d2B = MorphologicalImageProcessing.dilateChannel(dB, structred);
+            //Exibindo os resultados obtidos
+            int[,] colapsedVerticalLinesDilated = MorphologicalImageProcessing.dilateChannel(colapsedVerticalLines, new int[5, 5]);
 
-            Bitmap dilate2 = ColorProcessing.mixColorChannels(d2R, d2G, d2B);
-            new exibirImagem(dilate2, "dilate 2").Show();
-
-            int[,] e2R = MorphologicalImageProcessing.erodeChannel(d2R, structred, out _);
-            int[,] e2G = MorphologicalImageProcessing.erodeChannel(d2G, structred, out _);
-            int[,] e2B = MorphologicalImageProcessing.erodeChannel(d2B, structred, out _);
-
-           // noDots = ColorProcessing.mixColorChannels(e2R, e2G, e2B);
-           // new exibirImagem(noDots, "erode 2").Show();
-            
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            int[,] structuringElement = new int[,] { { 0,  -1,  -1 },
-                                                     { 0,  255, -1 },
-                                                     { 0, - 1,  -1 } };
-
-            var colorChannels = ColorProcessing.getAllColorChannels(bitmapImage);
-            var limiarizedChannels = ColorProcessing.limiarizeChannels(colorChannels.R, colorChannels.G, colorChannels.B, 100);
-
-            int[,]
-                R = limiarizedChannels.R,
-                G = limiarizedChannels.G,
-                B = limiarizedChannels.B;
-
-            var convexResults = MorphologicalImageProcessing.getConvexHull(R, G, B, structuringElement, 3);
-
-            int[,]
-                conR = convexResults.R,
-                conG = convexResults.G,
-                conB = convexResults.B;
+            colapsedVerticalLinesDilated = MorphologicalImageProcessing.dilateChannel(colapsedVerticalLinesDilated, new int[9, 9]);
+            int[,] mixedR = MorphologicalImageProcessing.getChannelsSum(Ri, colapsedVerticalLinesDilated, false),
+                   mixedG = MorphologicalImageProcessing.getChannelsSum(Gi, colapsedVerticalLinesDilated, false),
+                   mixedB = MorphologicalImageProcessing.getChannelsSum(Bi, colapsedVerticalLinesDilated, false);
 
             
-            Bitmap convex = ColorProcessing.mixColorChannels(conR, conG, conB);
-            new exibirImagem(convex, "CONVEX").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(GBIntersection, GBIntersection, GBIntersection), "Intersecção entre os canais verde e azul").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(verticalLines, verticalLines, verticalLines), "bordas esquerdas").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(colapsedVerticalLines, colapsedVerticalLines, colapsedVerticalLines), "bordas esquerdas colapsadas").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(colapsedVerticalLinesDilated, colapsedVerticalLinesDilated, colapsedVerticalLinesDilated), "bordas esquerdas colapsadas (dilatada)").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(mixedR, mixedG, mixedB), "Destacados").Show();
+            MessageBox.Show($"{objectsCount} objetos vermelhos na imagem");
         }
 
         //Fecho Convexo
@@ -194,17 +156,20 @@ namespace pratica2PDI.Codigos.UI
                 Ri = inputLimiarizedChannels.R,
                 Gi = inputLimiarizedChannels.G,
                 Bi = inputLimiarizedChannels.B,
-                intersection;
+                intersection,
+                CFactor;
 
             int separatedColor;
-            var separated = ImageManagment.separateChannelDialog(Ri, Gi, Bi, out separatedColor, out intersection);
+            
+            var separated = ImageManagment.separateChannelDialog(Ri, Gi, Bi, out separatedColor, out intersection, out CFactor);
 
             Ri = separated.R;
             Gi = separated.G;
             Bi = separated.B;
 
             var convexResults = MorphologicalImageProcessing.getConvexHull(Ri, Gi, Bi, structuringElement, 3);
-            var joinedChannel = ImageManagment.joinChannelDialog(convexResults.R, convexResults.G, convexResults.B, separatedColor, intersection);
+            
+            var joinedChannel = ImageManagment.joinChannelDialog(convexResults.R, convexResults.G, convexResults.B, separatedColor, intersection, CFactor, separated, inputLimiarizedChannels);
 
             int[,]
                 convR = joinedChannel.R,
@@ -218,7 +183,7 @@ namespace pratica2PDI.Codigos.UI
         }
 
         //Skeleton
-        private void button4_Click(object sender, EventArgs e)
+        private void skeletonButton_Click(object sender, EventArgs e)
         {
             var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
 
@@ -226,28 +191,31 @@ namespace pratica2PDI.Codigos.UI
                 Ri = inputLimiarizedChannels.R,
                 Gi = inputLimiarizedChannels.G,
                 Bi = inputLimiarizedChannels.B,
-                intersection;
+                intersection,
+                CFactor;
 
             int separatedColor;
-            var separated = ImageManagment.separateChannelDialog(Ri, Gi, Bi, out separatedColor, out intersection);
+            var separated = ImageManagment.separateChannelDialog(Ri, Gi, Bi, out separatedColor, out intersection, out CFactor);
 
             Ri = separated.R;
             Gi = separated.G;
             Bi = separated.B;
 
             var skeletons = MorphologicalImageProcessing.getAllChannelsSkeletons(Ri, Gi, Bi);
-            var joinedChannel = ImageManagment.joinChannelDialog(skeletons.R, skeletons.G, skeletons.B, separatedColor, intersection);
+
+            Bitmap skeletonImage = ColorProcessing.mixColorChannels(skeletons.R, skeletons.G, skeletons.B);
+            new exibirImagem(skeletonImage, "Skeleton").Show();
+
+            var joinedChannel = ImageManagment.joinChannelDialog(skeletons.R, skeletons.G, skeletons.B, separatedColor, intersection, CFactor, separated, inputLimiarizedChannels, true, 2);
             
             int[,]
                 skR = joinedChannel.R,
                 skG = joinedChannel.G,
                 skB = joinedChannel.B;
 
-            new exibirImagem(ColorProcessing.mixColorChannels(Ri, Ri, Ri), "VERMELHO").Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(Gi, Gi, Gi), "VERDE").Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(Bi, Bi, Bi), "AZUL").Show();
+            iM.saveOutput(skR, skG, skB, "esqueleto da imagem");
 
-            Bitmap skeletonImage = ColorProcessing.mixColorChannels(skR, skG, skB);
+            skeletonImage = ColorProcessing.mixColorChannels(skR, skG, skB);
             new exibirImagem(skeletonImage, "Skeleton").Show();
         }
 
