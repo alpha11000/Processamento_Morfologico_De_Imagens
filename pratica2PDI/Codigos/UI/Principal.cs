@@ -168,9 +168,6 @@ namespace pratica2PDI.Codigos.UI
 
             var skeletons = MorphologicalImageProcessing.getAllChannelsSkeletons(Ri, Gi, Bi);
 
-            Bitmap skeletonImage = ColorProcessing.mixColorChannels(skeletons.R, skeletons.G, skeletons.B);
-            new exibirImagem(skeletonImage, "Skeleton").Show();
-
             var joinedChannel = ImageManagment.joinChannelDialog(skeletons.R, skeletons.G, skeletons.B, separatedColor, intersection, CFactor, separated, inputLimiarizedChannels, true, 2);
             
             int[,]
@@ -180,7 +177,7 @@ namespace pratica2PDI.Codigos.UI
 
             iM.saveOutput(skR, skG, skB, "esqueleto da imagem");
 
-            skeletonImage = ColorProcessing.mixColorChannels(skR, skG, skB);
+            Bitmap skeletonImage = ColorProcessing.mixColorChannels(skR, skG, skB);
             new exibirImagem(skeletonImage, "Skeleton").Show();
         }
 
