@@ -110,10 +110,6 @@ namespace pratica2PDI.Codigos.UI
             new exibirImagem(output).Show();
         }
 
-        
-
-       
-
         //Fecho Convexo
         private void fechoConvexoButton(object sender, EventArgs e)
         {
@@ -151,7 +147,7 @@ namespace pratica2PDI.Codigos.UI
             new exibirImagem(convexHullImage, "Fecho Convexo").Show();
         }
 
-        //Skeleton
+        //esqueletização da imagem
         private void esqueletoButton_Click(object sender, EventArgs e)
         {
             var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
