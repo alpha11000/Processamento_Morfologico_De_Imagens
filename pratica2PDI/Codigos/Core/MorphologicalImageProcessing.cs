@@ -63,12 +63,7 @@ namespace pratica2PDI.Codigos.Core
         public static (int[,] R, int[,] G, int[,] B) getConvexHull(int[,] R, int[,] G, int[,] B, int[,] structuringElement, int rotations)
         {
             List<int[,]> outputs = new List<int[,]>();
-            List<int[,]> channels = new List<int[,]>();
-
-            channels.Add(R);
-            channels.Add(G);
-            channels.Add(B);
-
+            List<int[,]> channels = new List<int[,]>() { R, G, B};
 
             foreach (int[,] channel in channels)
             {

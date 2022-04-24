@@ -150,7 +150,7 @@
             this.button4.TabIndex = 16;
             this.button4.Text = "Esqueleto";
             this.button4.UseVisualStyleBackColor = false;
-            this.button4.Click += new System.EventHandler(this.skeletonButton_Click);
+            this.button4.Click += new System.EventHandler(this.esqueletoButton_Click);
             // 
             // label4
             // 
@@ -349,7 +349,7 @@
             this.contarQuadradosVermelhos.TabIndex = 35;
             this.contarQuadradosVermelhos.Text = "Contar Vermelhos";
             this.contarQuadradosVermelhos.UseVisualStyleBackColor = false;
-            this.contarQuadradosVermelhos.Click += new System.EventHandler(this.contarQuadradosVermelhos_Click);
+            this.contarQuadradosVermelhos.Click += new System.EventHandler(this.contarObjetosVermelhos_Click);
             // 
             // Principal
             // 

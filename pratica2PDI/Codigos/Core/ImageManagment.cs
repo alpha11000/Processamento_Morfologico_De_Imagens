@@ -6,6 +6,52 @@ namespace pratica2PDI.Codigos.Core
     {
         private Dictionary<string, List<int[,]>> outputs = new Dictionary<string, List<int[,]>>();
 
+        public (int[,] R, int[,] G, int[,] B) getInputImageDialog(bool limiarize = false, int limiar = 100)
+        {
+            int[,] ROutput, GOutput, BOutput;
+
+            string[] options = new string[outputs.Count];
+            int i = 0;
+
+            foreach (var o in outputs)
+            {
+                options[i++] = o.Key;
+            }
+
+            ChooseOption cO = new ChooseOption("A partir de qual imagem?", options);
+            cO.ShowDialog();
+            int choice = cO.getChoice();
+
+            List<int[,]> choicedInput = outputs[options[choice]];
+            ROutput = choicedInput.ElementAt(0);
+            GOutput = choicedInput.ElementAt(1);
+            BOutput = choicedInput.ElementAt(2);
+
+            if (limiarize)
+            {
+                ROutput = ColorProcessing.limiarizeChannel(ROutput, limiar);
+                GOutput = ColorProcessing.limiarizeChannel(GOutput, limiar);
+                BOutput = ColorProcessing.limiarizeChannel(BOutput, limiar);
+            }
+
+            return (ROutput, GOutput, BOutput);
+
+        }
+
+
+        public void saveOutput(int[,] R, int[,] G, int[,] B, string key)
+        {
+            List<int[,]> output = new List<int[,]> { R, G, B };
+
+            if (outputs.ContainsKey(key))
+            {
+                outputs[key] = output;
+                return;
+            }
+
+            outputs.Add(key, output);
+        }
+
         public static bool compareChannels(int[,] A, int[,] B)//return true or false - equal or not
         {
             for(int h = 0; h < A.GetLength(0); h++)
@@ -50,19 +96,18 @@ namespace pratica2PDI.Codigos.Core
 
             ABIntersection = MorphologicalImageProcessing.getIntersection(channelA, channelB); //I
 
-            int[,] tmpintersection = MorphologicalImageProcessing.getChannelsSum(ABIntersection, invC, true);
-            tmpintersection = ColorProcessing.invertChannelColors(tmpintersection); //Mc
-            tmpintersection = MorphologicalImageProcessing.imageDifference(tmpintersection, invC);
+            int[,] tmpOperations = MorphologicalImageProcessing.getChannelsSum(ABIntersection, invC, true);
+            tmpOperations = ColorProcessing.invertChannelColors(tmpOperations); //Mc
+            tmpOperations = MorphologicalImageProcessing.imageDifference(tmpOperations, invC);
 
             int[,] outA = MorphologicalImageProcessing.getIntersection(invB, channelA);
             int[,] outB = MorphologicalImageProcessing.getIntersection(invA, channelB);
             int[,] CIntersection = MorphologicalImageProcessing.getChannelsSum(outA, outB, false);
 
-            int[,] tmpIntersection = MorphologicalImageProcessing.imageDifference(ABIntersection, invC);
-            tmpIntersection = ColorProcessing.invertChannelColors(tmpIntersection);
+            int[,] tmpDifference = MorphologicalImageProcessing.imageDifference(ABIntersection, invC);
+            tmpDifference = ColorProcessing.invertChannelColors(tmpDifference);
 
-            int[,] test = MorphologicalImageProcessing.getIntersection(CIntersection, tmpIntersection);
-            CFactor = test;
+            CFactor = MorphologicalImageProcessing.getIntersection(CIntersection, tmpDifference);
 
             int[,] outC = channelC;
 
@@ -166,51 +211,6 @@ namespace pratica2PDI.Codigos.Core
         public void deleteOutputs()
         {
             outputs.Clear();
-        }
-
-        public (int[,] R, int[,] G, int[,] B) getInputImageDialog(bool limiarize = false, int limiar = 100)
-        {
-            int[,] ROutput, GOutput, BOutput;
-
-            string[] options = new string[outputs.Count];
-            int i = 0;
-
-            foreach (var o in outputs)
-            {
-                options[i++] = o.Key;
-            }
-
-            ChooseOption cO = new ChooseOption("A partir de qual imagem?", options);
-            cO.ShowDialog();
-            int choice = cO.getChoice();
-
-            List<int[,]> choicedInput = outputs[options[choice]];
-            ROutput = choicedInput.ElementAt(0);
-            GOutput = choicedInput.ElementAt(1);
-            BOutput = choicedInput.ElementAt(2);
-
-            if (limiarize)
-            {
-                ROutput = ColorProcessing.limiarizeChannel(ROutput, limiar);
-                GOutput = ColorProcessing.limiarizeChannel(GOutput, limiar);
-                BOutput = ColorProcessing.limiarizeChannel(BOutput, limiar);
-            }
-
-            return (ROutput, GOutput, BOutput);
-
-        }
-
-        public void saveOutput(int[,] R, int[,] G, int[,] B, string key)
-        {
-            List<int[,]> output = new List<int[,]> { R, G, B };
-
-            if (outputs.ContainsKey(key))
-            {
-                outputs[key] = output;
-                return;
-            }
-
-            outputs.Add(key, output);
         }
 
         public static int[,] getImageBorders(int[,] original)

@@ -1,14 +1,10 @@
 using pratica2PDI.Codigos.Core;
-using System.Windows.Forms;
 
 namespace pratica2PDI.Codigos.UI
 {
     public partial class Principal : Form
     {
         private OpenFileDialog ofd;
-        private Image image;
-        private Bitmap bitmapImage;
-
         ImageManagment iM = new ImageManagment();
 
         private int[,] R, G, B;
@@ -19,12 +15,13 @@ namespace pratica2PDI.Codigos.UI
             InitializeComponent();
         }
 
+        //Abrir arquivo de imagem
         private void OpenImageButton_Click(object sender, EventArgs e)
         {
             if(ofd.ShowDialog() == DialogResult.OK){
                 try{
-                    image = Image.FromFile(ofd.FileName);
-                    bitmapImage = new Bitmap(image);
+                    Image image = Image.FromFile(ofd.FileName);
+                    Bitmap bitmapImage = new Bitmap(image);
                     DiretorioText.Text = ofd.FileName;
 
                     var channels = ColorProcessing.getAllColorChannels(bitmapImage);
@@ -48,6 +45,50 @@ namespace pratica2PDI.Codigos.UI
             }
         }
 
+        //Remover pontos na imagem
+        private void removerPontos(object sender, EventArgs e)
+        {
+            int structSizeH;
+            if (!int.TryParse(estruturanteTamM.Text, out structSizeH)) structSizeH = 3;
+
+            int structSizeW;
+            if (!int.TryParse(estruturanteTamN.Text, out structSizeW)) structSizeW = 3;
+
+            int[,] structured = new int[structSizeH, structSizeW];
+
+            var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
+
+            int[,]
+                Ri = inputLimiarizedChannels.R,
+                Gi = inputLimiarizedChannels.G,
+                Bi = inputLimiarizedChannels.B;
+
+            var eroded = MorphologicalImageProcessing.erodeAllChannels(Ri, Gi, Bi, structured);
+
+            int[,]
+                erodedR = eroded.R,
+                erodedG = eroded.G,
+                erodedB = eroded.B;
+
+            int[,] ROutput = erodedR,
+                    GOutput = erodedG,
+                    BOutput = erodedB;
+
+            if (MessageBox.Show("aplicar dilatação?", "Dilatação", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                var dilated = MorphologicalImageProcessing.dilateAllChannels(erodedR, erodedG, erodedB, structured);
+                ROutput = dilated.R;
+                GOutput = dilated.G;
+                BOutput = dilated.B;
+            }
+
+            iM.saveOutput(ROutput, GOutput, BOutput, "Pontos Removidos");
+
+            Bitmap output = ColorProcessing.mixColorChannels(ROutput, GOutput, BOutput);
+            new exibirImagem(output).Show();
+        }
+
+        //preencher buracos na imagem
         private void preencherBuracosButton_click(object sender, EventArgs e)
         {
             var inputResult = iM.getInputImageDialog(true);
@@ -69,81 +110,9 @@ namespace pratica2PDI.Codigos.UI
             new exibirImagem(output).Show();
         }
 
-        private void removerPontos(object sender, EventArgs e)
-        {
-            int structSizeH;
-            if(!int.TryParse(estruturanteTamM.Text, out structSizeH)) structSizeH = 3;
+        
 
-            int structSizeW;
-            if (!int.TryParse(estruturanteTamN.Text, out structSizeW)) structSizeW = 3;
-
-            int[,] structured = new int[structSizeH, structSizeW];
-
-            var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
-
-            int[,]
-                Ri = inputLimiarizedChannels.R,
-                Gi = inputLimiarizedChannels.G,
-                Bi = inputLimiarizedChannels.B;
-
-            var eroded = MorphologicalImageProcessing.erodeAllChannels(Ri, Gi, Bi, structured);
-
-            int[,] 
-                erodedR = eroded.R,
-                erodedG = eroded.G,
-                erodedB = eroded.B;
-
-            int[,]  ROutput = erodedR,
-                    GOutput = erodedG,
-                    BOutput = erodedB;
-
-            if (MessageBox.Show("aplicar dilatação?", "Dilatação", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            {
-                var dilated = MorphologicalImageProcessing.dilateAllChannels(erodedR, erodedG, erodedB, structured);
-                ROutput = dilated.R;
-                GOutput = dilated.G;
-                BOutput = dilated.B;
-            }
-
-            iM.saveOutput(ROutput, GOutput, BOutput, "Pontos Removidos");
-
-            Bitmap output = ColorProcessing.mixColorChannels(ROutput, GOutput, BOutput);
-            new exibirImagem(output).Show();
-        }
-
-        private void contarQuadradosVermelhos_Click(object sender, EventArgs e)
-        {
-            var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
-
-            int[,]
-                Ri = inputLimiarizedChannels.R,
-                Gi = inputLimiarizedChannels.G,
-                Bi = inputLimiarizedChannels.B;
-
-            int[,] GBIntersection = MorphologicalImageProcessing.getIntersection(Bi, Gi);
-            int[,] verticalLines = MorphologicalImageProcessing.getVerticalLinesInChannel(GBIntersection, 15);
-            int[,] colapsedVerticalLines = ImageManagment.collapseVerticalLines(verticalLines);
-
-            int objectsCount = ImageManagment.countPixelsWithIntensity(colapsedVerticalLines, 0);
-
-
-
-            //Exibindo os resultados obtidos
-            int[,] colapsedVerticalLinesDilated = MorphologicalImageProcessing.dilateChannel(colapsedVerticalLines, new int[5, 5]);
-
-            colapsedVerticalLinesDilated = MorphologicalImageProcessing.dilateChannel(colapsedVerticalLinesDilated, new int[9, 9]);
-            int[,] mixedR = MorphologicalImageProcessing.getChannelsSum(Ri, colapsedVerticalLinesDilated, false),
-                   mixedG = MorphologicalImageProcessing.getChannelsSum(Gi, colapsedVerticalLinesDilated, false),
-                   mixedB = MorphologicalImageProcessing.getChannelsSum(Bi, colapsedVerticalLinesDilated, false);
-
-            
-            new exibirImagem(ColorProcessing.mixColorChannels(GBIntersection, GBIntersection, GBIntersection), "Intersecção entre os canais verde e azul").Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(verticalLines, verticalLines, verticalLines), "bordas esquerdas").Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(colapsedVerticalLines, colapsedVerticalLines, colapsedVerticalLines), "bordas esquerdas colapsadas").Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(colapsedVerticalLinesDilated, colapsedVerticalLinesDilated, colapsedVerticalLinesDilated), "bordas esquerdas colapsadas (dilatada)").Show();
-            new exibirImagem(ColorProcessing.mixColorChannels(mixedR, mixedG, mixedB), "Destacados").Show();
-            MessageBox.Show($"{objectsCount} objetos vermelhos na imagem");
-        }
+       
 
         //Fecho Convexo
         private void fechoConvexoButton(object sender, EventArgs e)
@@ -183,7 +152,7 @@ namespace pratica2PDI.Codigos.UI
         }
 
         //Skeleton
-        private void skeletonButton_Click(object sender, EventArgs e)
+        private void esqueletoButton_Click(object sender, EventArgs e)
         {
             var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
 
@@ -219,6 +188,38 @@ namespace pratica2PDI.Codigos.UI
             new exibirImagem(skeletonImage, "Skeleton").Show();
         }
 
-        
+        //quantidade de objetos vermelhos restantes
+        private void contarObjetosVermelhos_Click(object sender, EventArgs e)
+        {
+            var inputLimiarizedChannels = iM.getInputImageDialog(true, 100);
+
+            int[,]
+                Ri = inputLimiarizedChannels.R,
+                Gi = inputLimiarizedChannels.G,
+                Bi = inputLimiarizedChannels.B;
+
+            int[,] GBIntersection = MorphologicalImageProcessing.getIntersection(Bi, Gi);
+            int[,] verticalLines = MorphologicalImageProcessing.getVerticalLinesInChannel(GBIntersection, 15);
+            int[,] colapsedVerticalLines = ImageManagment.collapseVerticalLines(verticalLines);
+
+            int objectsCount = ImageManagment.countPixelsWithIntensity(colapsedVerticalLines, 0); //quantidade de objetos veremelhos
+
+            //Exibindo os resultados obtidos
+            int[,] colapsedVerticalLinesDilated = MorphologicalImageProcessing.dilateChannel(colapsedVerticalLines, new int[5, 5]);
+
+            colapsedVerticalLinesDilated = MorphologicalImageProcessing.dilateChannel(colapsedVerticalLinesDilated, new int[9, 9]);
+            int[,] mixedR = MorphologicalImageProcessing.getChannelsSum(Ri, colapsedVerticalLinesDilated, false),
+                   mixedG = MorphologicalImageProcessing.getChannelsSum(Gi, colapsedVerticalLinesDilated, false),
+                   mixedB = MorphologicalImageProcessing.getChannelsSum(Bi, colapsedVerticalLinesDilated, false);
+
+
+            new exibirImagem(ColorProcessing.mixColorChannels(GBIntersection, GBIntersection, GBIntersection), "Intersecção entre os canais verde e azul").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(verticalLines, verticalLines, verticalLines), "bordas esquerdas").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(colapsedVerticalLines, colapsedVerticalLines, colapsedVerticalLines), "bordas esquerdas colapsadas").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(colapsedVerticalLinesDilated, colapsedVerticalLinesDilated, colapsedVerticalLinesDilated), "bordas esquerdas colapsadas (dilatada)").Show();
+            new exibirImagem(ColorProcessing.mixColorChannels(mixedR, mixedG, mixedB), "Destacados").Show();
+            MessageBox.Show($"{objectsCount} objetos vermelhos na imagem");
+        }
+
     }
 }
